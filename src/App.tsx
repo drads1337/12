@@ -1,136 +1,401 @@
-import { Heart, ArrowRight, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { Heart, ArrowRight, ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-const HEARTS = [
-  { left: "10%", size: 24, duration: 20, delay: 0, opacity: 0.2 },
-  { left: "25%", size: 16, duration: 25, delay: 5, opacity: 0.15 },
-  { left: "40%", size: 32, duration: 18, delay: 2, opacity: 0.25 },
-  { left: "55%", size: 20, duration: 22, delay: 7, opacity: 0.2 },
-  { left: "70%", size: 28, duration: 19, delay: 1, opacity: 0.3 },
-  { left: "85%", size: 14, duration: 24, delay: 8, opacity: 0.1 },
-  { left: "15%", size: 18, duration: 21, delay: 12, opacity: 0.25 },
-  { left: "35%", size: 26, duration: 17, delay: 10, opacity: 0.15 },
-  { left: "65%", size: 22, duration: 23, delay: 14, opacity: 0.2 },
-  { left: "80%", size: 30, duration: 16, delay: 4, opacity: 0.25 },
-  { left: "5%",  size: 15, duration: 26, delay: 9, opacity: 0.1 },
-  { left: "45%", size: 35, duration: 15, delay: 11, opacity: 0.3 },
-  { left: "75%", size: 19, duration: 20, delay: 6, opacity: 0.15 },
-  { left: "90%", size: 25, duration: 18, delay: 3, opacity: 0.2 },
-  { left: "50%", size: 21, duration: 22, delay: 13, opacity: 0.25 },
+// ─── floating hearts ──────────────────────────────────────────────────────────
+
+const BG_HEARTS = [
+  { left: "4%",  size: 20, duration: 34, delay: 0,  opacity: 0.34 },
+  { left: "13%", size: 14, duration: 28, delay: 3,  opacity: 0.28 },
+  { left: "24%", size: 18, duration: 30, delay: 8,  opacity: 0.32 },
+  { left: "35%", size: 24, duration: 32, delay: 13, opacity: 0.38 },
+  { left: "47%", size: 16, duration: 27, delay: 5,  opacity: 0.3  },
+  { left: "58%", size: 22, duration: 31, delay: 10, opacity: 0.36 },
+  { left: "68%", size: 15, duration: 29, delay: 16, opacity: 0.27 },
+  { left: "78%", size: 19, duration: 33, delay: 20, opacity: 0.33 },
+  { left: "88%", size: 23, duration: 30, delay: 24, opacity: 0.37 },
+  { left: "95%", size: 17, duration: 28, delay: 12, opacity: 0.29 },
 ];
 
-const FloatingHearts = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-    {HEARTS.map((heart, idx) => (
-      <motion.div
-        key={idx}
-        className="absolute text-primary"
-        style={{ left: heart.left }}
-        initial={{ y: "110vh", opacity: 0 }}
-        animate={{ 
-          y: "-10vh", 
-          opacity: [0, heart.opacity, heart.opacity, 0],
-          x: ["-20px", "20px", "-20px", "20px", "-20px"] 
-        }}
-        transition={{ 
-          y: { duration: heart.duration, repeat: Infinity, ease: "linear", delay: heart.delay },
-          opacity: { duration: heart.duration, repeat: Infinity, ease: "linear", delay: heart.delay },
-          x: { duration: heart.duration * 0.7, repeat: Infinity, ease: "easeInOut", delay: heart.delay }
-        }}
-      >
-        <Heart size={heart.size} className="fill-primary" strokeWidth={1} />
-      </motion.div>
-    ))}
-  </div>
-);
+function FloatingHearts() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {BG_HEARTS.map((h, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{ left: h.left }}
+          initial={{ y: "108vh", opacity: 0 }}
+          animate={{
+            y: "-10vh",
+            opacity: [0, h.opacity, h.opacity, 0],
+            x: ["-10px", "10px", "-10px"],
+            scale: [0.85, 1.08, 0.95],
+          }}
+          transition={{
+            y:       { duration: h.duration, repeat: Infinity, ease: "linear",    delay: h.delay },
+            opacity: { duration: h.duration, repeat: Infinity, ease: "linear",    delay: h.delay },
+            x:       { duration: h.duration * 0.55, repeat: Infinity, ease: "easeInOut", delay: h.delay },
+            scale:   { duration: h.duration * 0.45, repeat: Infinity, ease: "easeInOut", delay: h.delay },
+          }}
+        >
+          <Heart
+            size={h.size}
+            className="fill-[#dd6e85] text-[#dd6e85]"
+            style={{ filter: "drop-shadow(0 0 10px rgba(221,110,133,0.38))" }}
+            strokeWidth={0}
+          />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
-export default function App() {
-  const [view, setView] = useState<'home' | 'gallery'>('home');
+// ─── data ─────────────────────────────────────────────────────────────────────
+
+type Photo = { src: string; desc: string };
+
+const PHOTO_DESCRIPTIONS = [
+  "Айжанным, именно тогда моё сердце нашло своё место",
+  "Кошечка, с тобой даже ночной воздух кажется теплее",
+  "Душечка, такие закаты бывают только рядом с тобой",
+  "Жанным, этот день навсегда останется в моём сердце",
+  "Любимая, ты делаешь каждый обычный день особенным",
+  "Солнышка, рядом с тобой мне не нужно ничего больше",
+  "Душечка, любой маршрут становится любимым, если ты рядом",
+  "Булочка милая, именно так ты и выглядишь в моих мыслях",
+  "Няшка вкусняшка, вечера с тобой - мои любимые часы",
+  "Айжанным, эта улыбка - самое красивое что я видел",
+  "Кошечка, в такие моменты я понимаю как мне повезло",
+  "Жанным, любая дорога - праздник, когда ты рядом",
+  "Солнышка, таких дней с тобой пусть будет ещё тысяча",
+  "Любимая, ты - моё самое лучшее воспоминание и мечта",
+];
+
+const LOCAL_PHOTOS = [
+  "/phto/IMG_0219.jpg",
+  "/phto/IMG_1002.jpg",
+  "/phto/IMG_1426.jpg",
+  "/phto/IMG_1507.jpg",
+  "/phto/IMG_1510.jpg",
+  "/phto/IMG_1513.jpg",
+  "/phto/IMG_1710.jpg",
+  "/phto/IMG_2575.jpg",
+  "/phto/IMG_2748.JPG",
+  "/phto/IMG_2894.jpg",
+  "/phto/IMG_3272.JPG",
+  "/phto/IMG_3572.JPG",
+  "/phto/IMG_4562.JPG",
+  "/phto/IMG_6238.jpg",
+];
+
+const PHOTOS: Photo[] = LOCAL_PHOTOS.map((src, idx) => ({
+  src,
+  desc: PHOTO_DESCRIPTIONS[idx] ?? "Наше любимое воспоминание",
+}));
+
+// keep all cards same width for an even 2x4 layout
+const FEATURED = new Set<number>();
+
+// ─── modal ────────────────────────────────────────────────────────────────────
+
+function Modal({ index, onClose }: { index: number; onClose: () => void }) {
+  const [cur, setCur] = useState(index);
+  const photo = PHOTOS[cur];
+
+  const prev = useCallback(() => setCur((i: number) => (i - 1 + PHOTOS.length) % PHOTOS.length), []);
+  const next = useCallback(() => setCur((i: number) => (i + 1) % PHOTOS.length), []);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape")      onClose();
+      if (e.key === "ArrowLeft")   prev();
+      if (e.key === "ArrowRight")  next();
+    };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose, prev, next]);
 
   return (
-    <div className="bg-texture text-on-background min-h-screen flex items-center justify-center relative overflow-hidden px-6">
-      <FloatingHearts />
-      
-      <AnimatePresence mode="wait">
-        {view === 'home' ? (
-          <motion.main 
-            key="home"
-            initial={{ opacity: 0, scale: 0.95 }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ backgroundColor: "rgba(22, 6, 12, 0.93)", backdropFilter: "blur(12px)" }}
+    >
+      {/* top bar */}
+      <div className="flex items-center justify-between px-5 py-4 shrink-0">
+        <span className="text-[10px] tracking-[0.25em] uppercase text-white/25">
+          {String(cur + 1).padStart(2, "0")} / {String(PHOTOS.length).padStart(2, "0")}
+        </span>
+        <button
+          onClick={onClose}
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-white/40 hover:text-white/80 hover:border-white/25 transition-all cursor-pointer"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* photo */}
+      <div className="flex-1 flex items-center justify-center px-5 py-2 min-h-0">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={cur}
+            src={photo.src}
+            alt=""
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-            className="w-full flex items-center justify-center relative z-10 py-12"
-          >
-            <div className="glass-panel w-full max-w-lg rounded-3xl p-10 md:p-16 flex flex-col items-center text-center relative shadow-[0_8px_32px_rgba(128,0,32,0.05)]">
-              {/* Main Icon */}
-              <div className="mb-8 text-primary">
-                <Heart className="fill-primary w-12 h-12 md:w-14 md:h-14" strokeWidth={1} />
-              </div>
-              
-              {/* Greeting Text */}
-              <h1 className="font-display-lg text-4xl md:text-5xl text-primary mb-12 drop-shadow-sm leading-tight">
-                Поздравляю,<br />любимая!
-              </h1>
-              
-              {/* Action Button */}
-              <button 
-                onClick={() => setView('gallery')}
-                className="relative group px-8 py-4 w-full sm:w-auto rounded-full overflow-hidden bg-gradient-to-r from-primary-container to-tertiary-container border border-tertiary-fixed shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-              >
-                <span className="font-label-caps text-label-caps tracking-widest text-on-primary-container relative z-10 flex items-center justify-center gap-3 text-sm font-semibold uppercase">
-                  Наши воспоминания
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </button>
-            </div>
-          </motion.main>
-        ) : (
-          <motion.main 
-            key="gallery"
-            initial={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.28 }}
+            className="w-full h-full object-contain rounded-xl"
+            style={{ maxWidth: 520 }}
+          />
+        </AnimatePresence>
+      </div>
+
+      {/* caption + nav */}
+      <div className="shrink-0 px-5 pb-8 pt-4 max-w-lg mx-auto w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={cur}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className="w-full h-[100dvh] max-w-4xl flex flex-col relative z-10 py-8 md:py-12"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="text-center mb-6"
           >
-            <button 
-              onClick={() => setView('home')}
-              className="self-start mb-6 flex items-center gap-2 text-primary hover:text-primary/70 transition-colors cursor-pointer"
+            <p className="serif font-light text-white/80 leading-relaxed" style={{ fontSize: "clamp(1rem,4vw,1.2rem)" }}>{photo.desc}</p>
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={prev}
+            className="flex-1 flex items-center justify-center gap-2 h-11 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 border border-white/10 hover:border-white/25 rounded-xl transition-all duration-300 cursor-pointer"
+          >
+            <ChevronLeft size={13} /> Пред.
+          </button>
+          <button
+            onClick={next}
+            className="flex-1 flex items-center justify-center gap-2 h-11 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 border border-white/10 hover:border-white/25 rounded-xl transition-all duration-300 cursor-pointer"
+          >
+            След. <ChevronRight size={13} />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── photo card ───────────────────────────────────────────────────────────────
+
+function PhotoCard({ photo, index, featured, onClick }: {
+  photo: Photo;
+  index: number;
+  featured: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay: 0.06 + index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+      onClick={onClick}
+      className={`text-left group cursor-pointer ${featured ? "col-span-2" : ""}`}
+    >
+      <div
+        className={`overflow-hidden rounded-2xl ${featured ? "aspect-[16/9] sm:aspect-[3/1.4]" : "aspect-[3/4]"}`}
+        style={{ boxShadow: "0 2px 20px rgba(180,80,100,0.07)" }}
+      >
+        <img
+          src={photo.src}
+          alt=""
+          className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-out"
+        />
+      </div>
+
+      <div className="mt-3 px-0.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[9px] tracking-[0.22em] uppercase text-[#d4878f]/50">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="text-[9px] tracking-[0.15em] text-[#d4878f]/35 group-hover:text-[#d4878f]/65 transition-colors duration-300">
+            ↗
+          </span>
+        </div>
+        <p className="serif font-light text-[#3d1a22] leading-snug" style={{ fontSize: "0.9rem" }}>{photo.desc}</p>
+      </div>
+    </motion.button>
+  );
+}
+
+// ─── app ──────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [view,  setView]  = useState<"home" | "gallery">("home");
+  const [modal, setModal] = useState<number | null>(null);
+
+  return (
+    <div className="min-h-[100svh] bg-[#fdf4f5] relative">
+      <FloatingHearts />
+
+      <AnimatePresence mode="wait">
+
+        {/* ── Home ─────────────────────────────────────────────────────────── */}
+        {view === "home" && (
+          <motion.div
+            key="home"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="relative z-10 min-h-[100svh] flex flex-col items-center justify-center px-6 sm:px-10 text-center"
+          >
+            {/* badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full mb-10"
+              style={{ border: "1px solid rgba(232,160,171,0.3)", background: "rgba(253,244,245,0.9)" }}
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-label-caps tracking-wider text-sm">НАЗАД</span>
+              <Heart size={7} className="fill-[#d4878f] text-[#d4878f]" strokeWidth={0} />
+              <span className="text-[9px] tracking-[0.28em] uppercase text-[#d4878f]/70">2 года вместе</span>
+            </motion.div>
+
+            {/* heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <h1
+                className="serif font-light text-[#3d1a22] leading-[1.06]"
+                style={{ fontSize: "clamp(2.8rem,11vw,6.5rem)" }}
+              >
+                С годовщиной,
+              </h1>
+              <h1
+                className="serif font-light italic text-[#b06070] leading-[1.06]"
+                style={{ fontSize: "clamp(2.8rem,11vw,6.5rem)" }}
+              >
+                любимая
+              </h1>
+            </motion.div>
+
+            {/* divider */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.8, delay: 0.85 }}
+              className="h-px w-16 my-9"
+              style={{ background: "linear-gradient(to right, transparent, #e8a0ab80, transparent)" }}
+            />
+
+            {/* cta */}
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.05 }}
+              onClick={() => setView("gallery")}
+              className="group inline-flex items-center gap-3 text-[10px] tracking-[0.3em] uppercase text-[#b06070]/50 hover:text-[#b06070] transition-colors duration-500 cursor-pointer"
+            >
+              Наши воспоминания
+              <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform duration-400" />
+            </motion.button>
+
+            {/* scroll hint */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 1.6 }}
+              className="absolute bottom-8 left-0 right-0 flex justify-center"
+            >
+              <motion.div
+                animate={{ y: [0, 5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="w-px h-8" style={{ background: "linear-gradient(to bottom, transparent, #e8a0ab60)" }} />
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ── Gallery ──────────────────────────────────────────────────────── */}
+        {view === "gallery" && (
+          <motion.div
+            key="gallery"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative z-10 min-h-[100svh] w-full max-w-xl mx-auto px-5 sm:px-6 pt-12 pb-20"
+          >
+            {/* back */}
+            <button
+              onClick={() => setView("home")}
+              className="flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-[#b06070]/45 hover:text-[#b06070]/80 transition-colors cursor-pointer mb-12"
+            >
+              <ArrowLeft size={11} />
+              Назад
             </button>
-            
-            <div className="flex-1 glass-panel rounded-3xl p-6 md:p-10 shadow-[0_8px_32px_rgba(128,0,32,0.05)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <h2 className="font-display-lg text-3xl md:text-4xl text-primary mb-8 text-center drop-shadow-sm">
-                Наши моменты
+
+            {/* title */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-10"
+            >
+              <p className="text-[9px] tracking-[0.4em] uppercase text-[#e8a0ab] mb-2.5">наши</p>
+              <h2
+                className="serif font-light text-[#3d1a22]"
+                style={{ fontSize: "clamp(2rem,8vw,3rem)" }}
+              >
+                воспоминания
               </h2>
-              
-              {/* Photo Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[
-                  "1518199266791-5375a83190b7",
-                  "1522673607200-164d1b6ce486",
-                  "1490750967868-88aa4486c946",
-                  "1516589178581-6cd7833ae3b2",
-                  "1499916078039-922301b0eb9b",
-                  "1502086223501-7ea6ecd79368",
-                  "1515934751635-c81c6bc9a2d8",
-                  "1474552226712-ac0f0961a954"
-                ].map((id, idx) => (
-                  <div key={idx} className="aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer border border-primary/10">
-                    <img 
-                      src={`https://images.unsplash.com/photo-${id}?w=500&q=80&fit=crop`} 
-                      alt={`Воспоминание ${idx + 1}`} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                    />
-                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                ))}
-              </div>
+              <div
+                className="mt-4 h-px w-10"
+                style={{ background: "linear-gradient(to right, #e8a0ab70, transparent)" }}
+              />
+            </motion.div>
+
+            {/* editorial grid */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-8">
+              {PHOTOS.map((photo, idx) => (
+                <PhotoCard
+                  key={idx}
+                  photo={photo}
+                  index={idx}
+                  featured={FEATURED.has(idx)}
+                  onClick={() => setModal(idx)}
+                />
+              ))}
             </div>
-          </motion.main>
+
+            {/* footer */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+              className="mt-16 flex flex-col items-center gap-3"
+            >
+              <Heart size={9} className="fill-[#e8a0ab] text-[#e8a0ab]" strokeWidth={0} />
+              <p className="text-[9px] tracking-[0.25em] uppercase text-[#d4878f]/35">
+                {PHOTOS.length} воспоминаний
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
+
+      {/* ── Modal ── */}
+      <AnimatePresence>
+        {modal !== null && (
+          <Modal index={modal} onClose={() => setModal(null)} />
         )}
       </AnimatePresence>
     </div>

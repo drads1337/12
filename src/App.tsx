@@ -73,20 +73,20 @@ const PHOTO_DESCRIPTIONS = [
 ];
 
 const LOCAL_PHOTOS = [
-  "/phto/IMG_0219.jpg",
-  "/phto/IMG_1002.jpg",
-  "/phto/IMG_1426.jpg",
-  "/phto/IMG_1507.jpg",
-  "/phto/IMG_1510.jpg",
-  "/phto/IMG_1513.jpg",
-  "/phto/IMG_1710.jpg",
-  "/phto/IMG_2575.jpg",
-  "/phto/IMG_2748.JPG",
-  "/phto/IMG_2894.jpg",
-  "/phto/IMG_3272.JPG",
-  "/phto/IMG_3572.JPG",
-  "/phto/IMG_4562.JPG",
-  "/phto/IMG_6238.jpg",
+  "/IMG_0219.jpg",
+  "/IMG_1002.jpg",
+  "/IMG_1426.jpg",
+  "/IMG_1507.jpg",
+  "/IMG_3005.jpg",
+  "/IMG_1513.jpg",
+  "/IMG_1710.jpg",
+  "/IMG_2575.jpg",
+  "/IMG_2748.JPG",
+  "/IMG_2894.jpg",
+  "/IMG_3272.JPG",
+  "/IMG_3572.JPG",
+  "/IMG_4562.JPG",
+  "/IMG_6238.jpg",
 ];
 
 const PHOTOS: Photo[] = LOCAL_PHOTOS.map((src, idx) => ({

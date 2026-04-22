@@ -189,6 +189,145 @@ function Modal({ index, onClose }: { index: number; onClose: () => void }) {
   );
 }
 
+// ─── quiz ─────────────────────────────────────────────────────────────────────
+
+const QUESTIONS = [
+  {
+    q: "Когда мы познакомились?",
+    options: ["15 марта", "23 апреля", "7 мая", "30 апреля"],
+    answer: "23 апреля",
+  },
+  {
+    q: "Когда мы впервые прогулись?",
+    options: ["1 мая", "20 апреля", "9 мая", "15 мая"],
+    answer: "9 мая",
+  },
+  {
+    q: "Наш первый поцелуй?",
+    options: ["5 июня", "25 мая", "20 июня", "12 июня"],
+    answer: "12 июня",
+  },
+];
+
+function Quiz({ onDone }: { onDone: () => void }) {
+  const [step,    setStep]    = useState(0);
+  const [picked,  setPicked]  = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const question = QUESTIONS[step];
+
+  function choose(opt: string) {
+    if (picked) return;
+    setPicked(opt);
+    if (opt === question.answer) {
+      setTimeout(() => {
+        if (step + 1 < QUESTIONS.length) {
+          setStep(s => s + 1);
+          setPicked(null);
+        } else {
+          setSuccess(true);
+          setTimeout(onDone, 1800);
+        }
+      }, 700);
+    }
+  }
+
+  if (success) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center gap-5 text-center py-8"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.18, 1] }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Heart size={26} className="fill-[#d4878f] text-[#d4878f]" strokeWidth={0} />
+        </motion.div>
+        <p className="serif font-light italic text-[#b06070]" style={{ fontSize: "clamp(1.3rem,5vw,1.8rem)" }}>
+          Ты всё помнишь, жанным ♡
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={step}
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -24 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full flex flex-col gap-6"
+      >
+        {/* step dots */}
+        <div className="flex items-center gap-2 justify-center">
+          {QUESTIONS.map((_, i) => (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-500"
+              style={{
+                width:  i === step ? 20 : 6,
+                height: 3,
+                background: i <= step ? "#d4878f" : "rgba(212,135,143,0.22)",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* question */}
+        <p className="text-[9px] tracking-[0.32em] uppercase text-[#d4878f]/50 text-center">
+          вопрос {step + 1} из {QUESTIONS.length}
+        </p>
+        <h3
+          className="serif font-light text-[#3d1a22] text-center leading-snug"
+          style={{ fontSize: "clamp(1.35rem,5vw,1.9rem)" }}
+        >
+          {question.q}
+        </h3>
+
+        {/* options */}
+        <div className="grid grid-cols-2 gap-3 mt-1">
+          {question.options.map(opt => {
+            const isCorrect = picked === opt && opt === question.answer;
+            const isWrong   = picked === opt && opt !== question.answer;
+            return (
+              <motion.button
+                key={opt}
+                onClick={() => choose(opt)}
+                whileTap={{ scale: picked ? 1 : 0.96 }}
+                animate={isWrong ? { x: [-5, 5, -4, 4, 0] } : {}}
+                transition={{ duration: 0.3 }}
+                className="h-12 rounded-2xl text-sm transition-all duration-300 cursor-pointer"
+                style={{
+                  border: isCorrect
+                    ? "1px solid rgba(120,190,108,0.55)"
+                    : isWrong
+                    ? "1px solid rgba(210,90,90,0.45)"
+                    : "1px solid rgba(212,135,143,0.22)",
+                  background: isCorrect
+                    ? "rgba(120,190,108,0.1)"
+                    : isWrong
+                    ? "rgba(210,90,90,0.07)"
+                    : "rgba(255,255,255,0.55)",
+                  color: isCorrect ? "#3d7a35" : isWrong ? "#b84040" : "#3d1a22",
+                  fontFamily: "Cormorant Garamond, serif",
+                  fontWeight: 300,
+                  fontSize: "1rem",
+                }}
+              >
+                {opt}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ─── photo card ───────────────────────────────────────────────────────────────
 
 function PhotoCard({ photo, index, featured, onClick }: {

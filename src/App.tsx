@@ -17,6 +17,57 @@ const BG_HEARTS = [
   { left: "95%", size: 17, duration: 28, delay: 12, opacity: 0.29 },
 ];
 
+// ─── floating words ───────────────────────────────────────────────────────────
+
+const BG_WORDS = [
+  { text: "кошечка",        left: "5%",  duration: 38, delay: 0,  opacity: 0.13, size: "0.72rem" },
+  { text: "жанным",         left: "18%", duration: 44, delay: 7,  opacity: 0.11, size: "0.68rem" },
+  { text: "менным",         left: "30%", duration: 36, delay: 15, opacity: 0.12, size: "0.7rem"  },
+  { text: "люблю тебя",     left: "44%", duration: 42, delay: 3,  opacity: 0.1,  size: "0.66rem" },
+  { text: "пупсяшка",       left: "57%", duration: 40, delay: 20, opacity: 0.13, size: "0.72rem" },
+  { text: "душечка",        left: "68%", duration: 46, delay: 10, opacity: 0.11, size: "0.68rem" },
+  { text: "пантерочка",     left: "80%", duration: 38, delay: 25, opacity: 0.12, size: "0.7rem"  },
+  { text: "цветошка",       left: "90%", duration: 43, delay: 5,  opacity: 0.1,  size: "0.66rem" },
+  { text: "любимка",        left: "12%", duration: 41, delay: 30, opacity: 0.12, size: "0.7rem"  },
+  { text: "булочка",        left: "36%", duration: 37, delay: 18, opacity: 0.11, size: "0.68rem" },
+  { text: "солнышка",       left: "62%", duration: 45, delay: 12, opacity: 0.12, size: "0.7rem"  },
+  { text: "айжанным",       left: "75%", duration: 39, delay: 35, opacity: 0.13, size: "0.72rem" },
+];
+
+function FloatingWords() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {BG_WORDS.map((w, i) => (
+        <motion.div
+          key={i}
+          className="absolute select-none"
+          style={{
+            left: w.left,
+            fontFamily: "Cormorant Garamond, serif",
+            fontSize: w.size,
+            letterSpacing: "0.18em",
+            color: `rgba(180,80,100,${w.opacity})`,
+            whiteSpace: "nowrap",
+          }}
+          initial={{ y: "108vh", opacity: 0 }}
+          animate={{
+            y: "-10vh",
+            opacity: [0, w.opacity, w.opacity, 0],
+            x: ["-8px", "8px", "-8px"],
+          }}
+          transition={{
+            y:       { duration: w.duration, repeat: Infinity, ease: "linear",    delay: w.delay },
+            opacity: { duration: w.duration, repeat: Infinity, ease: "linear",    delay: w.delay },
+            x:       { duration: w.duration * 0.6, repeat: Infinity, ease: "easeInOut", delay: w.delay },
+          }}
+        >
+          {w.text}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function FloatingHearts() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -122,24 +173,24 @@ function Modal({ index, onClose }: { index: number; onClose: () => void }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
       style={{ backgroundColor: "rgba(22, 6, 12, 0.93)", backdropFilter: "blur(12px)" }}
     >
       {/* top bar */}
-      <div className="flex items-center justify-between px-5 py-4 shrink-0">
-        <span className="text-[10px] tracking-[0.25em] uppercase text-white/25">
+      <div className="flex items-center justify-between px-4 sm:px-5 pt-[max(env(safe-area-inset-top),0.8rem)] pb-3 sm:py-4 shrink-0">
+        <span className="text-[10px] sm:text-[11px] tracking-[0.22em] sm:tracking-[0.25em] uppercase text-white/35">
           {String(cur + 1).padStart(2, "0")} / {String(PHOTOS.length).padStart(2, "0")}
         </span>
         <button
           onClick={onClose}
-          className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-white/40 hover:text-white/80 hover:border-white/25 transition-all cursor-pointer"
+          className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border border-white/20 text-white/65 sm:text-white/40 hover:text-white/90 hover:border-white/35 transition-all cursor-pointer"
         >
-          <X size={14} />
+          <X size={16} />
         </button>
       </div>
 
       {/* photo */}
-      <div className="flex-1 flex items-center justify-center px-5 py-2 min-h-0">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-5 py-1 sm:py-2 min-h-0">
         <AnimatePresence mode="wait">
           <motion.img
             key={cur}
@@ -149,14 +200,14 @@ function Modal({ index, onClose }: { index: number; onClose: () => void }) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.28 }}
-            className="w-full h-full object-contain rounded-xl"
-            style={{ maxWidth: 520 }}
+            className="w-full h-full object-contain rounded-lg sm:rounded-xl"
+            style={{ maxWidth: 640, maxHeight: "62vh" }}
           />
         </AnimatePresence>
       </div>
 
       {/* caption + nav */}
-      <div className="shrink-0 px-5 pb-8 pt-4 max-w-lg mx-auto w-full">
+      <div className="shrink-0 px-4 sm:px-5 pb-[max(env(safe-area-inset-bottom),1rem)] sm:pb-8 pt-3 sm:pt-4 max-w-lg mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={cur}
@@ -164,24 +215,26 @@ function Modal({ index, onClose }: { index: number; onClose: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="text-center mb-6"
+            className="text-center mb-4 sm:mb-6"
           >
-            <p className="serif font-light text-white/80 leading-relaxed" style={{ fontSize: "clamp(1rem,4vw,1.2rem)" }}>{photo.desc}</p>
+            <p className="serif font-light text-white/85 leading-relaxed px-1" style={{ fontSize: "clamp(0.98rem,4.6vw,1.2rem)" }}>
+              {photo.desc}
+            </p>
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           <button
             onClick={prev}
-            className="flex-1 flex items-center justify-center gap-2 h-11 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 border border-white/10 hover:border-white/25 rounded-xl transition-all duration-300 cursor-pointer"
+            className="flex items-center justify-center gap-2 h-12 sm:h-11 text-[10px] tracking-[0.18em] sm:tracking-[0.2em] uppercase text-white/65 sm:text-white/35 hover:text-white/85 border border-white/20 sm:border-white/10 hover:border-white/35 rounded-xl transition-all duration-300 cursor-pointer"
           >
-            <ChevronLeft size={13} /> Пред.
+            <ChevronLeft size={14} /> Пред.
           </button>
           <button
             onClick={next}
-            className="flex-1 flex items-center justify-center gap-2 h-11 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 border border-white/10 hover:border-white/25 rounded-xl transition-all duration-300 cursor-pointer"
+            className="flex items-center justify-center gap-2 h-12 sm:h-11 text-[10px] tracking-[0.18em] sm:tracking-[0.2em] uppercase text-white/65 sm:text-white/35 hover:text-white/85 border border-white/20 sm:border-white/10 hover:border-white/35 rounded-xl transition-all duration-300 cursor-pointer"
           >
-            След. <ChevronRight size={13} />
+            След. <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -373,11 +426,12 @@ function PhotoCard({ photo, index, featured, onClick }: {
 // ─── app ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [view,  setView]  = useState<"home" | "gallery">("home");
+  const [view,  setView]  = useState<"home" | "quiz" | "gallery">("home");
   const [modal, setModal] = useState<number | null>(null);
 
   return (
     <div className="min-h-[100svh] bg-[#fdf4f5] relative">
+      <FloatingWords />
       <FloatingHearts />
 
       <AnimatePresence mode="wait">
@@ -438,7 +492,7 @@ export default function App() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 1.05 }}
-              onClick={() => setView("gallery")}
+              onClick={() => setView("quiz")}
               className="group inline-flex items-center gap-3 text-[10px] tracking-[0.3em] uppercase text-[#b06070]/50 hover:text-[#b06070] transition-colors duration-500 cursor-pointer"
             >
               Наши воспоминания
@@ -459,6 +513,43 @@ export default function App() {
                 <div className="w-px h-8" style={{ background: "linear-gradient(to bottom, transparent, #e8a0ab60)" }} />
               </motion.div>
             </motion.div>
+          </motion.div>
+        )}
+
+        {/* ── Quiz ─────────────────────────────────────────────────────────── */}
+        {view === "quiz" && (
+          <motion.div
+            key="quiz"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative z-10 min-h-[100svh] w-full max-w-xl mx-auto px-5 sm:px-6 pt-12 pb-20"
+          >
+            <button
+              onClick={() => setView("home")}
+              className="flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase text-[#b06070]/45 hover:text-[#b06070]/80 transition-colors cursor-pointer mb-10"
+            >
+              <ArrowLeft size={11} />
+              Назад
+            </button>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55 }}
+              className="mb-8"
+            >
+              <p className="text-[9px] tracking-[0.4em] uppercase text-[#e8a0ab] mb-2.5">мини</p>
+              <h2
+                className="serif font-light text-[#3d1a22]"
+                style={{ fontSize: "clamp(2rem,8vw,3rem)" }}
+              >
+                quiz
+              </h2>
+            </motion.div>
+
+            <Quiz onDone={() => setView("gallery")} />
           </motion.div>
         )}
 
